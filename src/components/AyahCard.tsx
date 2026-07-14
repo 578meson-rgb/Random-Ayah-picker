@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AyahApiResponse } from "../types";
 import { PRIMARY_TRANSLATIONS, SECONDARY_LANGUAGES } from "../translationOptions";
-import { Share2, Bookmark, BookmarkCheck, Play, Square, Loader2, Copy, Check, ArrowUpRight } from "lucide-react";
+import { Share2, Bookmark, BookmarkCheck, Play, Square, Loader2, Copy, Check, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { SURAH_LIST } from "../surahData";
 
 interface AyahCardProps {
   ayah: AyahApiResponse;
@@ -10,6 +11,7 @@ interface AyahCardProps {
   isBookmarked: boolean;
   onToggleBookmark: () => void;
   onFetchRandom: () => void;
+  onFetchSpecific: (surahNum: number, ayahNum: number) => void;
   isLoading: boolean;
   autoPlayAudio: boolean;
 }
@@ -21,6 +23,7 @@ export const AyahCard: React.FC<AyahCardProps> = ({
   isBookmarked,
   onToggleBookmark,
   onFetchRandom,
+  onFetchSpecific,
   isLoading,
   autoPlayAudio,
 }) => {
@@ -133,32 +136,41 @@ Shared from Random Ayah Picker.`;
     }
   };
 
-  // Helper function to build quran.com slug and URL pattern
-  const getQuranComUrl = () => {
-    const isBangla = secondaryLanguageId && secondaryLanguageId.startsWith("bn");
-    const langPrefix = isBangla ? "bn/" : "";
-    const surahName = arabic.surah.englishName;
+  // Helper functions to navigate ayahs inside the app
+  const loadPreviousVerse = () => {
+    const currentSurahNum = arabic.surah.number;
+    const currentAyahNum = arabic.numberInSurah;
 
-    // Create clean slug (e.g. Al-Bayyinah -> al-bayyinah, Ali 'Imran -> ali-imran)
-    const slug = surahName
-      .toLowerCase()
-      .replace(/'/g, "")
-      .replace(/\s+/g, "-")
-      .replace(/[^a-z0-9-]/g, "");
-
-    // Link to the NEXT verse for "continue reading" (or the current verse if it's the last one)
-    const nextVerseNum = arabic.numberInSurah < arabic.surah.numberOfAyahs
-      ? arabic.numberInSurah + 1
-      : arabic.numberInSurah;
-
-    return `https://quran.com/${langPrefix}${slug}/${nextVerseNum}`;
+    if (currentAyahNum > 1) {
+      onFetchSpecific(currentSurahNum, currentAyahNum - 1);
+    } else {
+      // Go to previous surah
+      let targetSurahNum = currentSurahNum - 1;
+      if (targetSurahNum < 1) {
+        targetSurahNum = 114; // Wrap around to An-Nas
+      }
+      const targetSurahMeta = SURAH_LIST.find(s => s.number === targetSurahNum);
+      if (targetSurahMeta) {
+        onFetchSpecific(targetSurahNum, targetSurahMeta.numberOfAyahs);
+      }
+    }
   };
 
-  const nextVerseNum = arabic.numberInSurah < arabic.surah.numberOfAyahs 
-    ? arabic.numberInSurah + 1 
-    : arabic.numberInSurah;
+  const loadNextVerse = () => {
+    const currentSurahNum = arabic.surah.number;
+    const currentAyahNum = arabic.numberInSurah;
 
-  const isNextVerseAvailable = arabic.numberInSurah < arabic.surah.numberOfAyahs;
+    if (currentAyahNum < arabic.surah.numberOfAyahs) {
+      onFetchSpecific(currentSurahNum, currentAyahNum + 1);
+    } else {
+      // Go to next surah
+      let targetSurahNum = currentSurahNum + 1;
+      if (targetSurahNum > 114) {
+        targetSurahNum = 1; // Wrap around to Al-Fatihah
+      }
+      onFetchSpecific(targetSurahNum, 1);
+    }
+  };
 
   return (
     <div 
@@ -242,21 +254,33 @@ Shared from Random Ayah Picker.`;
               <span className="font-semibold text-[#5c4a37]">Surah:</span> {arabic.surah.englishName} ({arabic.surah.name}) • Chapter {arabic.surah.number}
             </div>
             <div>
-              <span className="font-semibold text-[#5c4a37]">Total Ayahs:</span> {arabic.surah.numberOfAyahs}
+              <span className="font-semibold text-[#5c4a37]">Verse Position:</span> {arabic.numberInSurah} of {arabic.surah.numberOfAyahs}
             </div>
           </div>
 
-          {/* Continue Verse Button with Quran.com Link */}
-          <a
-            id="continue-to-quran-link"
-            href={getQuranComUrl()}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-1.5 bg-[#f5eedc] hover:bg-[#ebdcb9] text-[#7d5d21] font-sans font-medium text-xs rounded-lg transition-colors border border-[#ebdcb9] cursor-pointer"
-          >
-            <span>Continue reading on Quran.com</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </a>
+          {/* Inline Navigation Buttons */}
+          <div className="flex items-center gap-2">
+            <button
+              id="prev-ayah-btn"
+              onClick={loadPreviousVerse}
+              disabled={isLoading}
+              className="inline-flex items-center justify-center space-x-1 px-3.5 py-1.5 bg-[#f5eedc] hover:bg-[#ebdcb9] text-[#7d5d21] disabled:opacity-50 font-sans font-bold text-xs rounded-xl transition-all border border-[#ebdcb9] cursor-pointer"
+              title="Previous Verse"
+            >
+              <ChevronLeft className="w-3.5 h-3.5 mr-0.5" />
+              <span>Prev Verse</span>
+            </button>
+            <button
+              id="next-ayah-btn"
+              onClick={loadNextVerse}
+              disabled={isLoading}
+              className="inline-flex items-center justify-center space-x-1 px-4 py-1.5 bg-[#aa843d] hover:bg-[#c5a059] text-white disabled:opacity-50 font-sans font-bold text-xs rounded-xl transition-all shadow-sm cursor-pointer"
+              title="Next Verse"
+            >
+              <span>Next Verse</span>
+              <ChevronRight className="w-3.5 h-3.5 ml-0.5" />
+            </button>
+          </div>
         </div>
       </div>
 

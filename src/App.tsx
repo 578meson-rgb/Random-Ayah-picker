@@ -633,6 +633,7 @@ export default function App() {
                 )}
                 onToggleBookmark={handleToggleBookmark}
                 onFetchRandom={fetchRandomAyah}
+                onFetchSpecific={fetchSpecificAyah}
                 isLoading={isAyahLoading}
                 autoPlayAudio={preferences.audioEnabled}
               />
