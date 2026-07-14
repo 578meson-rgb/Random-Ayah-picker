@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Scheherazade+New:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Playfair Display", serif;
+  --font-arabic: "Scheherazade New", "Amiri", serif;
+  --font-bangla: "Noto Sans Bengali", sans-serif;
+}
+
+/* Base style resets and customizations for Milkish theme */
+body {
+  background-color: #fcfaf2; /* Soft creamy milky off-white */
+  color: #2c251d; /* Deep warm charcoal-brown for amazing readability */
+  font-family: var(--font-sans);
+}
+
+/* Custom scrollbars for a neat look */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f5eedc; /* Soft caramel-milk track */
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c5a059; /* Soft matte gold thumb */
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #aa843d;
+}
+
+/* Beautiful custom glow utility class for the gold border */
+.gold-glow {
+  box-shadow: 0 4px 20px rgba(197, 160, 89, 0.12);
+}
+
+.gold-glow-hover:hover {
+  box-shadow: 0 6px 24px rgba(197, 160, 89, 0.25);
+}
+
+/* Quranic verse separator symbols */
+.ayah-number-badge {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="%23c5a059" stroke-width="4"><path d="M50 5 L95 50 L50 95 L5 50 Z"/><circle cx="50" cy="50" r="15" fill="%23c5a059"/></svg>');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+

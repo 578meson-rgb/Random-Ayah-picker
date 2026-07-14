@@ -1,0 +1,6 @@
+{
+  "name": "Random Ayah Picker",
+  "description": "An interactive random Ayah explorer and spiritual companion, featuring beautiful Quranic verses, multi-lingual translations, search, bookmarks, and Gemini-powered reflections in a soothing Milkish theme.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
