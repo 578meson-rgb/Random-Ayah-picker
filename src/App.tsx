@@ -19,11 +19,14 @@ import {
   ArrowRight, 
   AlertTriangle,
   RotateCcw,
-  BookMarked
+  BookMarked,
+  Heart
 } from "lucide-react";
+import { MoodPortal } from "./components/MoodPortal";
 
 export default function App() {
   // 1. Core State
+  const [activeTab, setActiveTab] = useState<"explore" | "mood">("explore");
   const [preferences, setPreferences] = useState<UserPreferences>({
     primaryTranslation: "en.sahih",
     secondaryLanguage: "bn.bengali",
@@ -412,7 +415,7 @@ export default function App() {
           <div className="w-10 h-10 bg-white border border-[#ebdcb9] rounded-2xl flex items-center justify-center text-xl text-[#aa843d] shadow-sm">
             🕌
           </div>
-          <div>
+          <div className="hidden xs:block">
             <h1 className="font-serif font-bold text-base md:text-lg tracking-wider text-[#aa843d] flex items-center">
               Random Ayah Picker
             </h1>
@@ -420,6 +423,39 @@ export default function App() {
               Interactive Spiritual Guidance & Insights
             </p>
           </div>
+        </div>
+
+        {/* Tab Switcher */}
+        <div className="flex bg-[#f5eedc] border border-[#ebdcb9] rounded-2xl p-0.5 sm:p-1 shadow-inner">
+          <button
+            id="tab-explore-btn"
+            onClick={() => {
+              setActiveTab("explore");
+              setIsSearchOpen(false);
+            }}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === "explore"
+                ? "bg-[#aa843d] text-white shadow-sm"
+                : "text-[#8c7456] hover:text-[#524430] hover:bg-white/40"
+            }`}
+          >
+            Explore
+          </button>
+          <button
+            id="tab-mood-btn"
+            onClick={() => {
+              setActiveTab("mood");
+              setIsSearchOpen(false);
+            }}
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+              activeTab === "mood"
+                ? "bg-[#aa843d] text-white shadow-sm"
+                : "text-[#8c7456] hover:text-[#524430] hover:bg-white/40"
+            }`}
+          >
+            <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" />
+            <span>Moods</span>
+          </button>
         </div>
 
         {/* Header Action Buttons */}
@@ -617,58 +653,76 @@ export default function App() {
       {/* 4. MAIN REFLECTION WORKSPACE (GRID) */}
       <main className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-8 flex-grow flex flex-col items-center space-y-8">
         
-        {/* Workspace Layout: Flexes side-by-side on desktop, stacked on mobile */}
-        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-          
-          {/* LEFT PANEL: Ayah Display Card (Col Span 7) */}
-          <section className="lg:col-span-7 flex justify-center">
-            {currentAyah ? (
-              <AyahCard
-                ayah={currentAyah}
-                primaryTranslationId={preferences.primaryTranslation}
-                secondaryLanguageId={preferences.secondaryLanguage}
-                isBookmarked={bookmarks.some(
-                  b => b.surahNumber === currentAyah.arabic.surah.number && 
-                       b.ayahNumber === currentAyah.arabic.numberInSurah
+        {activeTab === "explore" ? (
+          <>
+            {/* Workspace Layout: Flexes side-by-side on desktop, stacked on mobile */}
+            <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              
+              {/* LEFT PANEL: Ayah Display Card (Col Span 7) */}
+              <section className="lg:col-span-7 flex justify-center">
+                {currentAyah ? (
+                  <AyahCard
+                    ayah={currentAyah}
+                    primaryTranslationId={preferences.primaryTranslation}
+                    secondaryLanguageId={preferences.secondaryLanguage}
+                    isBookmarked={bookmarks.some(
+                      b => b.surahNumber === currentAyah.arabic.surah.number && 
+                           b.ayahNumber === currentAyah.arabic.numberInSurah
+                    )}
+                    onToggleBookmark={handleToggleBookmark}
+                    onFetchRandom={fetchRandomAyah}
+                    onFetchSpecific={fetchSpecificAyah}
+                    isLoading={isAyahLoading}
+                    autoPlayAudio={preferences.audioEnabled}
+                  />
+                ) : (
+                  <div className="w-full max-w-2xl aspect-[4/3] bg-white border border-[#ebdcb9] rounded-3xl flex flex-col items-center justify-center space-y-4 shadow-lg">
+                    <div className="w-12 h-12 bg-[#faf8f4] rounded-full flex items-center justify-center animate-bounce border border-[#ebdcb9]/60">
+                      <BookMarked className="w-6 h-6 text-[#aa843d]" />
+                    </div>
+                    <p className="text-[#8c7456] font-sans font-semibold text-sm tracking-wide">Initialising Random Ayah Picker...</p>
+                  </div>
                 )}
-                onToggleBookmark={handleToggleBookmark}
-                onFetchRandom={fetchRandomAyah}
-                onFetchSpecific={fetchSpecificAyah}
-                isLoading={isAyahLoading}
-                autoPlayAudio={preferences.audioEnabled}
+              </section>
+
+              {/* RIGHT PANEL: Live Tafsir & Insights (Col Span 5) */}
+              <section className="lg:col-span-5 flex justify-center h-full">
+                <ReflectionsPanel
+                  reflection={currentReflection}
+                  isLoading={isReflectionLoading}
+                  onRetry={() => currentAyah && generateLiveReflection(currentAyah, preferences.primaryTranslation)}
+                  error={reflectionError}
+                />
+              </section>
+
+            </div>
+
+            {/* 5. HISTORY & BOOKMARKS CONTAINER */}
+            <section className="w-full flex justify-center pt-4">
+              <HistoryAndBookmarks
+                bookmarks={bookmarks}
+                history={history}
+                onSelectAyah={(sNum, aNum) => fetchSpecificAyah(sNum, aNum)}
+                onRemoveBookmark={handleRemoveBookmark}
+                onClearHistory={handleClearHistory}
               />
-            ) : (
-              <div className="w-full max-w-2xl aspect-[4/3] bg-white border border-[#ebdcb9] rounded-3xl flex flex-col items-center justify-center space-y-4 shadow-lg">
-                <div className="w-12 h-12 bg-[#faf8f4] rounded-full flex items-center justify-center animate-bounce border border-[#ebdcb9]/60">
-                  <BookMarked className="w-6 h-6 text-[#aa843d]" />
-                </div>
-                <p className="text-[#8c7456] font-sans font-semibold text-sm tracking-wide">Initialising Random Ayah Picker...</p>
-              </div>
-            )}
-          </section>
-
-          {/* RIGHT PANEL: Live Tafsir & Insights (Col Span 5) */}
-          <section className="lg:col-span-5 flex justify-center h-full">
-            <ReflectionsPanel
-              reflection={currentReflection}
-              isLoading={isReflectionLoading}
-              onRetry={() => currentAyah && generateLiveReflection(currentAyah, preferences.primaryTranslation)}
-              error={reflectionError}
-            />
-          </section>
-
-        </div>
-
-        {/* 5. HISTORY & BOOKMARKS CONTAINER */}
-        <section className="w-full flex justify-center pt-4">
-          <HistoryAndBookmarks
-            bookmarks={bookmarks}
-            history={history}
+            </section>
+          </>
+        ) : (
+          <MoodPortal
             onSelectAyah={(sNum, aNum) => fetchSpecificAyah(sNum, aNum)}
-            onRemoveBookmark={handleRemoveBookmark}
-            onClearHistory={handleClearHistory}
+            currentAyah={currentAyah}
+            currentReflection={currentReflection}
+            isLoading={isAyahLoading}
+            isReflectionLoading={isReflectionLoading}
+            preferences={preferences}
+            onToggleBookmark={handleToggleBookmark}
+            isBookmarked={!!currentAyah && bookmarks.some(
+              b => b.surahNumber === currentAyah.arabic.surah.number && 
+                   b.ayahNumber === currentAyah.arabic.numberInSurah
+            )}
           />
-        </section>
+        )}
 
       </main>
 

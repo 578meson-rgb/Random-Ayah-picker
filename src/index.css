@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Scheherazade+New:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-display: "Playfair Display", serif;
-  --font-arabic: "Scheherazade New", "Amiri", serif;
+  --font-arabic: "Noto Naskh Arabic", "Amiri", "Scheherazade New", serif;
   --font-bangla: "Noto Sans Bengali", sans-serif;
 }
 

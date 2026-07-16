@@ -202,27 +202,27 @@ Shared from Random Ayah Picker.`;
         </div>
 
         {/* ﴾ Arabic Text Here ﴿ */}
-        <div className="my-4 py-6 flex flex-col items-center justify-center bg-[#faf8f4] rounded-2xl p-4 border border-[#ebdcb9]/40">
+        <div className="my-2 py-4 flex flex-col items-center justify-center bg-[#faf8f4] rounded-2xl p-4 border border-[#ebdcb9]/40">
           <p 
             id="arabic-verse-text"
             dir="rtl" 
-            className="font-arabic text-3xl md:text-4xl leading-loose font-medium text-[#7d5d21] text-center tracking-wide px-4 selection:bg-[#ebdcb9]/40"
+            className="font-arabic text-2xl md:text-3xl leading-loose font-medium text-[#7d5d21] text-center tracking-wide px-4 selection:bg-[#ebdcb9]/40"
           >
             {arabic.text}
           </p>
         </div>
 
-        <div className="border-t border-[#ebdcb9]/40 my-2" />
+        <div className="border-t border-[#ebdcb9]/40 my-1.5" />
 
         {/* English Translation Section */}
-        <div className="space-y-1.5">
+        <div className="space-y-1">
           <h4 className="text-[10px] uppercase font-bold tracking-wider text-[#8c7456]">
             English Translation:
           </h4>
-          <p className="font-display text-lg md:text-xl text-[#3c3226] leading-relaxed italic font-normal selection:bg-[#ebdcb9]/40">
+          <p className="font-display text-sm md:text-base text-[#3c3226] leading-relaxed italic font-normal selection:bg-[#ebdcb9]/40">
             "{primary.text}"
           </p>
-          <p className="text-[11px] text-[#8c7456] text-right font-medium italic">
+          <p className="text-[10px] text-[#8c7456] text-right font-medium italic">
             — {primaryTranslator}
           </p>
         </div>
@@ -230,15 +230,15 @@ Shared from Random Ayah Picker.`;
         {/* Additional Translation Section (Only if enabled) */}
         {secondary && secondaryLanguageId !== "none" && (
           <>
-            <div className="border-t border-[#ebdcb9]/40 my-2" />
-            <div className="space-y-1.5">
+            <div className="border-t border-[#ebdcb9]/40 my-1.5" />
+            <div className="space-y-1">
               <h4 className="text-[10px] uppercase font-bold tracking-wider text-[#8c7456]">
                 Translation ({SECONDARY_LANGUAGES.find(l => l.id === secondaryLanguageId)?.language}):
               </h4>
-              <p className={`text-base text-[#3c3226] leading-relaxed selection:bg-[#ebdcb9]/40 ${secondaryLanguageId.startsWith("bn") ? "font-bangla font-medium text-lg text-[#26211a]" : "italic"}`}>
+              <p className={`text-xs md:text-sm text-[#3c3226] leading-relaxed selection:bg-[#ebdcb9]/40 ${secondaryLanguageId.startsWith("bn") ? "font-bangla font-medium text-sm md:text-base text-[#26211a]" : "italic"}`}>
                 "{secondary.text}"
               </p>
-              <p className="text-[11px] text-[#8c7456] text-right font-medium italic">
+              <p className="text-[10px] text-[#8c7456] text-right font-medium italic">
                 — {secondaryTranslator}
               </p>
             </div>
