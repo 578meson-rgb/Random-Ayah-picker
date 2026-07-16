@@ -13,23 +13,25 @@ const PORT = 3000;
 // Middleware for parsing JSON requests
 app.use(express.json());
 
-// Initialize Gemini client on the server-side with required User-Agent
-let ai: GoogleGenAI | null = null;
-try {
-  if (process.env.GEMINI_API_KEY) {
-    ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+// Lazy initialization helper for Gemini SDK to prevent startup issues
+let aiInstance: GoogleGenAI | null = null;
+
+function getAiClient() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable is missing. Please define it in your environment configurations.");
+    }
+    aiInstance = new GoogleGenAI({
+      apiKey: apiKey,
       httpOptions: {
         headers: {
           'User-Agent': 'aistudio-build',
         }
       }
     });
-  } else {
-    console.warn("GEMINI_API_KEY is not defined in the environment. AI reflections will be disabled or fall back to static text.");
   }
-} catch (error) {
-  console.error("Failed to initialize Gemini client:", error);
+  return aiInstance;
 }
 
 // API endpoint to generate Tafsir, background context, and spiritual reflection
@@ -40,9 +42,12 @@ app.post("/api/reflect", async (req, res) => {
     return res.status(400).json({ error: "Arabic text and English translation are required." });
   }
 
-  if (!ai) {
+  let ai: GoogleGenAI;
+  try {
+    ai = getAiClient();
+  } catch (error: any) {
     return res.status(503).json({ 
-      error: "AI reflection service is currently unavailable.",
+      error: error.message,
       fallback: true
     });
   }

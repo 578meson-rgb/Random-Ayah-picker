@@ -1,11 +1,16 @@
 import { GoogleGenAI, Type } from "@google/genai";
 
-// Initialize Gemini client on the server-side with required User-Agent
-let ai: GoogleGenAI | null = null;
-try {
-  if (process.env.GEMINI_API_KEY) {
-    ai = new GoogleGenAI({
-      apiKey: process.env.GEMINI_API_KEY,
+// Lazy initialization helper for Gemini SDK to prevent startup crashes in serverless environments
+let aiInstance: GoogleGenAI | null = null;
+
+function getAiClient() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY environment variable is missing. Please ensure you have added GEMINI_API_KEY to your Environment Variables in the Vercel project dashboard.");
+    }
+    aiInstance = new GoogleGenAI({
+      apiKey: apiKey,
       httpOptions: {
         headers: {
           'User-Agent': 'aistudio-build',
@@ -13,8 +18,7 @@ try {
       }
     });
   }
-} catch (error) {
-  console.error("Failed to initialize Gemini client in serverless function:", error);
+  return aiInstance;
 }
 
 export default async function handler(req: any, res: any) {
@@ -37,9 +41,12 @@ export default async function handler(req: any, res: any) {
     return res.status(400).json({ error: "Arabic text and English translation are required." });
   }
 
-  if (!ai) {
+  let ai: GoogleGenAI;
+  try {
+    ai = getAiClient();
+  } catch (error: any) {
     return res.status(503).json({ 
-      error: "AI reflection service is currently unavailable. Please ensure GEMINI_API_KEY environment variable is configured in your Vercel project dashboard.",
+      error: error.message,
       fallback: true
     });
   }
