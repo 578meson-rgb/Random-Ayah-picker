@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { BookmarkedAyah, HistoryItem } from "../types";
-import { Bookmark, Clock, Trash2, ArrowUpRight, Heart, ChevronDown, ChevronUp } from "lucide-react";
+import { Bookmark, Clock, Trash2, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 
 interface HistoryAndBookmarksProps {
   bookmarks: BookmarkedAyah[];
@@ -18,43 +18,46 @@ export const HistoryAndBookmarks: React.FC<HistoryAndBookmarksProps> = ({
   onClearHistory,
 }) => {
   const [activeTab, setActiveTab] = useState<"bookmarks" | "history">("bookmarks");
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div 
       id="saved-verses-accordion"
-      className="w-full max-w-2xl bg-white border border-[#ebdcb9] rounded-3xl shadow-lg overflow-hidden gold-glow"
+      className="w-full max-w-2xl bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl md:rounded-3xl mushaf-glow overflow-hidden text-left"
     >
-      {/* Header / Toggle Button */}
+      {/* Header Accordion Toggle */}
       <button
         id="toggle-saved-verses-btn"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center justify-between px-6 py-4 bg-[#fbf9f2] text-[#2c251d] hover:text-black transition-colors cursor-pointer border-b border-[#ebdcb9]/60"
+        className="w-full flex items-center justify-between px-6 py-4 bg-[var(--color-surface-subtle)] text-[var(--color-text-main)] hover:bg-[var(--color-surface)] transition-colors cursor-pointer border-b border-[var(--color-border)]"
       >
-        <div className="flex items-center space-x-2 text-[#aa843d]">
-          <Bookmark className="w-5 h-5 fill-[#aa843d]/10 text-[#aa843d]" />
-          <h3 className="font-sans font-bold text-xs uppercase tracking-wider">
-            Saved Verses & History ({bookmarks.length} Bookmarks)
+        <div className="flex items-center space-x-2 text-[var(--color-accent)]">
+          <Bookmark className="w-4 h-4 fill-current opacity-70" />
+          <h3 className="font-display font-semibold text-xs uppercase tracking-wider text-[var(--color-text-main)]">
+            Saved Verses & Reading History ({bookmarks.length} Bookmarks)
           </h3>
         </div>
-        {isOpen ? <ChevronUp className="w-5 h-5 text-[#8c7456]" /> : <ChevronDown className="w-5 h-5 text-[#8c7456]" />}
+        {isOpen ? (
+          <ChevronUp className="w-4 h-4 text-[var(--color-text-muted)]" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-[var(--color-text-muted)]" />
+        )}
       </button>
 
       {/* Expanded Container */}
       {isOpen && (
-        <div className="p-6">
+        <div className="p-6 space-y-4 animate-fade-in">
           {/* Sub Tabs */}
-          <div className="flex border-b border-[#ebdcb9]/60 mb-5">
+          <div className="flex border-b border-[var(--color-border)]">
             <button
               id="bookmarks-tab-btn"
               onClick={() => setActiveTab("bookmarks")}
               className={`flex items-center space-x-2 px-4 py-2.5 -mb-px text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === "bookmarks"
-                  ? "border-b-2 border-[#aa843d] text-[#aa843d]"
-                  : "text-[#8c7456] hover:text-[#524430]"
+                  ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
               }`}
             >
-              <Heart className={`w-3.5 h-3.5 ${activeTab === "bookmarks" ? "fill-[#aa843d]/10" : ""}`} />
               <span>Bookmarks ({bookmarks.length})</span>
             </button>
             <button
@@ -62,8 +65,8 @@ export const HistoryAndBookmarks: React.FC<HistoryAndBookmarksProps> = ({
               onClick={() => setActiveTab("history")}
               className={`flex items-center space-x-2 px-4 py-2.5 -mb-px text-xs font-semibold uppercase tracking-wider transition-all cursor-pointer ${
                 activeTab === "history"
-                  ? "border-b-2 border-[#aa843d] text-[#aa843d]"
-                  : "text-[#8c7456] hover:text-[#524430]"
+                  ? "border-b-2 border-[var(--color-accent)] text-[var(--color-accent)]"
+                  : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
               }`}
             >
               <Clock className="w-3.5 h-3.5" />
@@ -75,41 +78,46 @@ export const HistoryAndBookmarks: React.FC<HistoryAndBookmarksProps> = ({
           {activeTab === "bookmarks" && (
             <div className="space-y-3">
               {bookmarks.length === 0 ? (
-                <div className="text-center py-8 text-[#8c7456] text-xs">
-                  No bookmarked ayahs yet. Press "Bookmark" on any verse to save it.
+                <div className="text-center py-8 text-[var(--color-text-muted)] text-xs font-serif italic">
+                  No bookmarked verses yet. Click the "Bookmark" icon on any verse to preserve it here.
                 </div>
               ) : (
-                <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
+                <div className="max-h-64 overflow-y-auto space-y-2.5 pr-1">
                   {bookmarks.map((b) => (
                     <div 
                       key={`${b.surahNumber}:${b.ayahNumber}`}
-                      className="p-3 bg-[#faf8f4] hover:bg-white border border-[#ebdcb9]/40 hover:border-[#c5a059] rounded-2xl flex items-center justify-between group transition-all"
+                      className="p-3.5 bg-[var(--color-surface-subtle)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] rounded-xl flex items-center justify-between group transition-all"
                     >
-                      <div className="flex-grow min-w-0 pr-4">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-xs font-bold font-sans text-[#aa843d]">
+                      <div 
+                        className="flex-grow min-w-0 pr-4 cursor-pointer"
+                        onClick={() => onSelectAyah(b.surahNumber, b.ayahNumber)}
+                      >
+                        <div className="flex items-center space-x-2 text-xs">
+                          <span className="font-semibold text-[var(--color-accent)] font-sans">
                             {b.surahEnglishName} [{b.surahNumber}:{b.ayahNumber}]
                           </span>
-                          <span className="text-[10px] text-[#8c7456] font-sans">
+                          <span aria-hidden="true" className="opacity-30">·</span>
+                          <span className="text-[10px] text-[var(--color-text-muted)]">
                             {new Date(b.timestamp).toLocaleDateString()}
                           </span>
                         </div>
-                        <p className="text-xs text-[#524430] italic truncate mt-1">
+                        <p className="text-xs text-[var(--color-text-main)] italic truncate mt-1 font-serif">
                           "{b.translationText}"
                         </p>
                       </div>
-                      <div className="flex items-center space-x-2 shrink-0 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity">
+
+                      <div className="flex items-center space-x-1.5 shrink-0">
                         <button
                           onClick={() => onSelectAyah(b.surahNumber, b.ayahNumber)}
-                          className="p-1.5 bg-white hover:bg-[#faf6ed] text-[#aa843d] border border-[#ebdcb9] rounded-xl transition-colors cursor-pointer"
-                          title="View Verse"
+                          className="p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] hover:bg-[var(--color-surface)] rounded-lg transition-colors cursor-pointer"
+                          title="Open Verse"
                         >
-                          <ArrowUpRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => onRemoveBookmark(b.surahNumber, b.ayahNumber)}
-                          className="p-1.5 bg-white hover:bg-red-50 text-red-700 border border-red-200 rounded-xl transition-colors cursor-pointer"
-                          title="Remove Bookmark"
+                          className="p-1.5 text-[var(--color-text-muted)] hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                          title="Remove bookmark"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -125,46 +133,42 @@ export const HistoryAndBookmarks: React.FC<HistoryAndBookmarksProps> = ({
           {activeTab === "history" && (
             <div className="space-y-3">
               {history.length === 0 ? (
-                <div className="text-center py-8 text-[#8c7456] text-xs">
-                  No view history recorded. Start exploring random ayahs!
+                <div className="text-center py-8 text-[var(--color-text-muted)] text-xs font-serif italic">
+                  Your reading trail will appear here as you explore verses.
                 </div>
               ) : (
-                <div className="space-y-3">
-                  <div className="max-h-64 overflow-y-auto space-y-3 pr-1">
-                    {history.map((h, i) => (
-                      <div 
-                        key={i}
-                        className="p-3 bg-[#faf8f4] hover:bg-white border border-[#ebdcb9]/40 hover:border-[#c5a059] rounded-2xl flex items-center justify-between group transition-all"
-                      >
-                        <div>
-                          <span className="text-xs font-bold font-sans text-[#524430]">
-                            {h.surahEnglishName} • Verse {h.ayahNumber}
-                          </span>
-                          <span className="text-[10px] text-[#8c7456] font-sans block mt-0.5">
-                            Viewed: {new Date(h.timestamp).toLocaleTimeString()}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => onSelectAyah(h.surahNumber, h.ayahNumber)}
-                          className="p-1.5 bg-white hover:bg-[#faf6ed] text-[#aa843d] border border-[#ebdcb9] rounded-xl opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                          title="Recall Verse"
-                        >
-                          <ArrowUpRight className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
+                <>
                   <div className="flex justify-end">
                     <button
-                      id="clear-history-btn"
                       onClick={onClearHistory}
-                      className="text-[11px] font-semibold uppercase tracking-wider text-[#8c7456] hover:text-red-700 flex items-center space-x-1 cursor-pointer transition-colors"
+                      className="text-[11px] text-[var(--color-text-muted)] hover:text-rose-600 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <Trash2 className="w-3 h-3" />
-                      <span>Clear View History</span>
+                      <span>Clear Trail</span>
                     </button>
                   </div>
-                </div>
+                  <div className="max-h-64 overflow-y-auto space-y-2 pr-1">
+                    {history.map((h, i) => (
+                      <button
+                        key={`${h.surahNumber}:${h.ayahNumber}-${i}`}
+                        onClick={() => onSelectAyah(h.surahNumber, h.ayahNumber)}
+                        className="w-full text-left p-3 bg-[var(--color-surface-subtle)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-border-hover)] rounded-xl flex items-center justify-between transition-all cursor-pointer text-xs"
+                      >
+                        <div className="flex items-center space-x-2">
+                          <span className="font-semibold text-[var(--color-text-main)]">
+                            Surah {h.surahEnglishName}
+                          </span>
+                          <span className="text-[var(--color-accent)] font-medium">
+                            [{h.surahNumber}:{h.ayahNumber}]
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-[var(--color-text-muted)]">
+                          {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </>
               )}
             </div>
           )}

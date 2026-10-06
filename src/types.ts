@@ -73,4 +73,8 @@ export interface UserPreferences {
   secondaryLanguage: string;   // e.g. 'bn.bengali' or 'none'
   audioEnabled: boolean;
   reciter: string;
+  theme?: 'emerald' | 'midnight' | 'sandalwood';
+  arabicFontSize?: 'small' | 'medium' | 'large' | 'xlarge';
+  showEnglishTranslation?: boolean;
+  showSecondaryTranslation?: boolean;
 }

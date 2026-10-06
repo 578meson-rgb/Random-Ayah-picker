@@ -7,22 +7,18 @@ import { AyahCard } from "./components/AyahCard";
 import { ReflectionsPanel } from "./components/ReflectionsPanel";
 import { PreferencePanel } from "./components/PreferencePanel";
 import { HistoryAndBookmarks } from "./components/HistoryAndBookmarks";
+import { MoodPortal } from "./components/MoodPortal";
 import { 
   Settings, 
   Search, 
-  BookOpen, 
-  Sparkles, 
-  Clock, 
   Info, 
   Compass, 
   X, 
   ArrowRight, 
   AlertTriangle,
-  RotateCcw,
-  BookMarked,
-  Heart
+  Heart,
+  Palette
 } from "lucide-react";
-import { MoodPortal } from "./components/MoodPortal";
 
 export default function App() {
   // 1. Core State
@@ -30,8 +26,12 @@ export default function App() {
   const [preferences, setPreferences] = useState<UserPreferences>({
     primaryTranslation: "en.sahih",
     secondaryLanguage: "bn.bengali",
-    audioEnabled: true,
-    reciter: "ar.alafasy"
+    audioEnabled: false,
+    reciter: "ar.alafasy",
+    theme: "emerald",
+    arabicFontSize: "large",
+    showEnglishTranslation: true,
+    showSecondaryTranslation: true,
   });
 
   const [currentAyah, setCurrentAyah] = useState<AyahApiResponse | null>(null);
@@ -61,26 +61,26 @@ export default function App() {
   const [quickSurah, setQuickSurah] = useState<number>(1);
   const [quickAyah, setQuickAyah] = useState<number>(1);
 
-  // Rate Limiting (Technical notes: max 10 calls per minute)
+  // Rate Limiting (10 calls per minute)
   const [requestTimestamps, setRequestTimestamps] = useState<number[]>([]);
   const [rateLimitWarning, setRateLimitWarning] = useState(false);
 
-  // 2. Initial Mount Loader
+  // 2. Initial Mount Loader & Synchronize Theme to HTML root
   useEffect(() => {
-    // A. Load Preferences from LocalStorage
     const savedPrefs = localStorage.getItem("quran_companion_prefs");
-    let currentPrefs = preferences;
+    let initialTheme: "emerald" | "midnight" | "sandalwood" = "emerald";
     if (savedPrefs) {
       try {
         const parsed = JSON.parse(savedPrefs);
         setPreferences(parsed);
-        currentPrefs = parsed;
+        if (parsed.theme) initialTheme = parsed.theme;
       } catch (e) {
         console.error("Failed to parse preferences from localStorage", e);
       }
     }
 
-    // B. Load Bookmarks & History from LocalStorage
+    document.documentElement.setAttribute("data-theme", initialTheme);
+
     const savedBookmarks = localStorage.getItem("quran_companion_bookmarks");
     if (savedBookmarks) {
       try { setBookmarks(JSON.parse(savedBookmarks)); } catch (e) {}
@@ -90,11 +90,18 @@ export default function App() {
       try { setHistory(JSON.parse(savedHistory)); } catch (e) {}
     }
 
-    // C. Load First Default Verse (Ayat al-Kursi) as a beautiful greeting
+    // Load Ayat al-Kursi as inaugural default verse
     const defaultFallback = FALLBACK_VERSES[0];
     setCurrentAyah(defaultFallback.response);
     setCurrentReflection(defaultFallback.reflection);
   }, []);
+
+  // Sync theme changes to data-theme attribute
+  useEffect(() => {
+    if (preferences.theme) {
+      document.documentElement.setAttribute("data-theme", preferences.theme);
+    }
+  }, [preferences.theme]);
 
   // 3. Sync Preferences to LocalStorage
   const handleUpdatePreferences = (newPrefs: Partial<UserPreferences>) => {
@@ -102,7 +109,6 @@ export default function App() {
     setPreferences(updated);
     localStorage.setItem("quran_companion_prefs", JSON.stringify(updated));
 
-    // If translation changed, immediately re-fetch current verse to apply translation change
     if (currentAyah && (newPrefs.primaryTranslation || newPrefs.secondaryLanguage)) {
       fetchSpecificAyah(
         currentAyah.arabic.surah.number, 
@@ -111,6 +117,22 @@ export default function App() {
         updated.secondaryLanguage
       );
     }
+  };
+
+  // Cycle Theme Quick Action
+  const cycleTheme = () => {
+    const themeOrder: ("emerald" | "midnight" | "sandalwood")[] = ["emerald", "midnight", "sandalwood"];
+    const currentIndex = themeOrder.indexOf(preferences.theme || "emerald");
+    const nextTheme = themeOrder[(currentIndex + 1) % themeOrder.length];
+    handleUpdatePreferences({ theme: nextTheme });
+  };
+
+  // Cycle Arabic Font Size Quick Action with Small, Medium, Large, Extra Large
+  const cycleArabicFontSize = () => {
+    const sizes: ("small" | "medium" | "large" | "xlarge")[] = ["small", "medium", "large", "xlarge"];
+    const currentIndex = sizes.indexOf(preferences.arabicFontSize || "large");
+    const nextSize = sizes[(currentIndex + 1) % sizes.length];
+    handleUpdatePreferences({ arabicFontSize: nextSize });
   };
 
   // 4. Rate-Limiting Check (10 calls per 60 seconds)
@@ -138,11 +160,8 @@ export default function App() {
     setReflectionError(null);
 
     try {
-      // Pick random Surah (1-114)
       const randomSurahIdx = Math.floor(Math.random() * SURAH_LIST.length);
       const selectedSurah = SURAH_LIST[randomSurahIdx];
-      
-      // Pick random Ayah within this Surah's valid range
       const randomAyahNum = Math.floor(Math.random() * selectedSurah.numberOfAyahs) + 1;
 
       await fetchSpecificAyah(
@@ -151,7 +170,6 @@ export default function App() {
         preferences.primaryTranslation, 
         preferences.secondaryLanguage
       );
-
     } catch (err: any) {
       console.error("Failed to generate random Ayah:", err);
       loadFallbackVerse();
@@ -169,7 +187,6 @@ export default function App() {
     setAyahError(null);
 
     try {
-      // Formulate editions requested: Arabic + Primary translation + Optional secondary translation
       const editions = ["quran-uthmani", primaryTranslationId];
       if (secondaryLanguageId !== "none") {
         editions.push(secondaryLanguageId);
@@ -188,7 +205,6 @@ export default function App() {
         throw new Error("Invalid response received from Alquran API");
       }
 
-      // Map response array back to structured data
       const arabicData = responseJson.data.find((e: any) => e.edition.identifier === "quran-uthmani");
       const primaryData = responseJson.data.find((e: any) => e.edition.identifier === primaryTranslationId);
       const secondaryData = secondaryLanguageId !== "none" 
@@ -208,10 +224,7 @@ export default function App() {
       setCurrentAyah(structuredAyah);
       setIsAyahLoading(false);
 
-      // Save to History (Remember last 5 viewed ayahs)
       addToHistory(surahNum, ayahNum, arabicData.surah.englishName);
-
-      // Trigger Gemini-powered Live reflections in parallel
       generateLiveReflection(structuredAyah, primaryTranslationId);
 
     } catch (err: any) {
@@ -219,7 +232,6 @@ export default function App() {
       setAyahError(err.message || "An error occurred while communicating with the Quran database.");
       setIsAyahLoading(false);
       
-      // If we don't have a current ayah, load fallback
       if (!currentAyah) {
         loadFallbackVerse();
       }
@@ -259,7 +271,6 @@ export default function App() {
       setReflectionError(err.message || "Failed to generate live Tafsir reflection from Gemini.");
       setIsReflectionLoading(false);
       
-      // Look up if we have a matching static reflection in our fallback verses to save the day
       const matchingFallback = FALLBACK_VERSES.find(
         f => f.response.arabic.surah.number === ayahData.arabic.surah.number && 
              f.response.arabic.numberInSurah === ayahData.arabic.numberInSurah
@@ -268,21 +279,19 @@ export default function App() {
       if (matchingFallback) {
         setCurrentReflection(matchingFallback.reflection);
       } else {
-        // Simple default simulated reflection
         setCurrentReflection({
           context: `This verse belongs to Surah ${ayahData.arabic.surah.englishName}.`,
-          explanation: "Tafsir explanations help us understand the profound linguistics and moral requirements of God's message.",
-          reflection: "Read this verse slowly and allow its message to sit with your heart. Let it guide your behavior and conversations with others today.",
-          keywords: ["Faith", "Reflections", "Patience"]
+          explanation: "Tafsir explanations reveal the sublime wisdom, linguistic precision, and spiritual imperatives of the Quran.",
+          reflection: "Recite this verse with presence of mind. Allow its reassurance to illuminate your actions, speech, and inner tranquility today.",
+          keywords: ["Guidance", "Faith", "Contemplation"]
         });
       }
     }
   };
 
-  // 8. Add a successful fetch to Recent History (FIFO of 5 items)
+  // 8. Add a successful fetch to Recent History (limit to 5)
   const addToHistory = (surahNumber: number, ayahNumber: number, surahEnglishName: string) => {
     setHistory((prevHistory) => {
-      // Remove duplicates if the same verse was recently viewed
       const filtered = prevHistory.filter(
         item => !(item.surahNumber === surahNumber && item.ayahNumber === ayahNumber)
       );
@@ -294,20 +303,19 @@ export default function App() {
         timestamp: Date.now()
       };
 
-      const updated = [newItem, ...filtered].slice(0, 5); // Limit to last 5
+      const updated = [newItem, ...filtered].slice(0, 5);
       localStorage.setItem("quran_companion_history", JSON.stringify(updated));
       return updated;
     });
   };
 
-  // 9. Load Fallback Verse in case of errors
+  // 9. Load Fallback Verse in case of offline/network issues
   const loadFallbackVerse = () => {
-    // Choose a random item from our fallback verses
     const idx = Math.floor(Math.random() * FALLBACK_VERSES.length);
     const fallbackItem = FALLBACK_VERSES[idx];
     setCurrentAyah(fallbackItem.response);
     setCurrentReflection(fallbackItem.reflection);
-    setAyahError("We encountered a network issue loading the live database. Displaying a pre-cached offline fallback verse.");
+    setAyahError("Connecting with offline cached verse due to a temporary network issue.");
   };
 
   // 10. Bookmark Toggle Mechanism
@@ -316,7 +324,6 @@ export default function App() {
 
     const surahNum = currentAyah.arabic.surah.number;
     const ayahNum = currentAyah.arabic.numberInSurah;
-
     const exists = bookmarks.some(b => b.surahNumber === surahNum && b.ayahNumber === ayahNum);
 
     let updated: BookmarkedAyah[];
@@ -368,14 +375,13 @@ export default function App() {
 
       const responseJson = await res.json();
       if (responseJson.code !== 200 || !responseJson.data) {
-        throw new Error("No results found matching your keyword.");
+        throw new Error("No results found matching your query.");
       }
 
       const matches = responseJson.data.matches || [];
-      // Limit to top 15 matches for speed and spacing elegance
       setSearchResults(matches.slice(0, 15));
       if (matches.length === 0) {
-        setSearchError("No verses contain this keyword. Try basic words like 'Patience', 'Mercy', 'Light', or 'Peace'.");
+        setSearchError("No verses contain this keyword. Try words like 'Patience', 'Mercy', 'Light', 'Peace', or 'Forgiveness'.");
       }
     } catch (err: any) {
       console.error("Search error:", err);
@@ -385,58 +391,51 @@ export default function App() {
     }
   };
 
-  // 12. Quick selector Jump
+  // 12. Quick Jump to Surah:Ayah
   const handleQuickJump = (e: React.FormEvent) => {
     e.preventDefault();
     const surahMeta = SURAH_LIST.find(s => s.number === Number(quickSurah));
     if (!surahMeta) return;
 
     let targetAyah = Number(quickAyah);
-    // Boundary check
     if (targetAyah < 1) targetAyah = 1;
     if (targetAyah > surahMeta.numberOfAyahs) {
       targetAyah = surahMeta.numberOfAyahs;
-      setQuickAyah(targetAyah); // reset input to maximum allowed
+      setQuickAyah(targetAyah);
     }
 
     fetchSpecificAyah(quickSurah, targetAyah);
-    setIsSearchOpen(false); // close panel after jumping
+    setIsSearchOpen(false);
   };
 
-  // Get current selected Surah details
   const activeSelectorSurahMeta = SURAH_LIST.find(s => s.number === Number(quickSurah));
 
   return (
-    <div className="min-h-screen bg-[#faf6ed] text-[#2c251d] flex flex-col font-sans selection:bg-[#aa843d]/15 selection:text-[#aa843d] pb-12">
+    <div className="min-h-screen bg-[var(--color-canvas)] text-[var(--color-text-main)] flex flex-col font-sans transition-colors duration-200">
       
-      {/* 1. STICKY BRAND HEADER */}
-      <header className="sticky top-0 z-40 bg-[#faf6ed]/95 backdrop-blur-md border-b border-[#ebdcb9] px-4 md:px-8 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-white border border-[#ebdcb9] rounded-2xl flex items-center justify-center text-xl text-[#aa843d] shadow-sm">
-            🕌
-          </div>
-          <div className="hidden xs:block">
-            <h1 className="font-serif font-bold text-base md:text-lg tracking-wider text-[#aa843d] flex items-center">
-              Random Ayah Picker
-            </h1>
-            <p className="text-[10px] md:text-xs text-[#8c7456] font-semibold">
-              Interactive Spiritual Guidance & Insights
-            </p>
-          </div>
+      {/* 1. ULTRA-RESPONSIVE TOP BAR: Compact on mobile so Settings button is NEVER hidden */}
+      <header className="sticky top-0 z-40 bg-[var(--color-canvas)]/95 backdrop-blur-md border-b border-[var(--color-border)] px-2.5 sm:px-4 lg:px-8 py-2.5 sm:py-3.5 flex items-center justify-between gap-1.5 sm:gap-3">
+        
+        {/* Zone 1: Wordmark / Brand Title */}
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <span className="text-base sm:text-lg">🕌</span>
+          <a href="#" className="font-display font-bold text-xs sm:text-sm md:text-base tracking-wider text-[var(--color-text-main)] hover:text-[var(--color-accent)] transition-colors whitespace-nowrap">
+            AYAH PICKER
+          </a>
         </div>
 
-        {/* Tab Switcher */}
-        <div className="flex bg-[#f5eedc] border border-[#ebdcb9] rounded-2xl p-0.5 sm:p-1 shadow-inner">
+        {/* Zone 2: Navigation Modes (Sized down on mobile for perfect fit) */}
+        <nav className="flex items-center gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-[var(--color-surface-subtle)] border border-[var(--color-border)] rounded-xl shrink-0" aria-label="Main Modes">
           <button
             id="tab-explore-btn"
             onClick={() => {
               setActiveTab("explore");
               setIsSearchOpen(false);
             }}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-colors cursor-pointer whitespace-nowrap ${
               activeTab === "explore"
-                ? "bg-[#aa843d] text-white shadow-sm"
-                : "text-[#8c7456] hover:text-[#524430] hover:bg-white/40"
+                ? "bg-[var(--color-surface)] text-[var(--color-accent)] shadow-2xs"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
             }`}
           >
             Explore
@@ -447,108 +446,123 @@ export default function App() {
               setActiveTab("mood");
               setIsSearchOpen(false);
             }}
-            className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+            className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[11px] sm:text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap ${
               activeTab === "mood"
-                ? "bg-[#aa843d] text-white shadow-sm"
-                : "text-[#8c7456] hover:text-[#524430] hover:bg-white/40"
+                ? "bg-[var(--color-surface)] text-[var(--color-accent)] shadow-2xs"
+                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-main)]"
             }`}
           >
-            <Heart className="w-3 h-3 sm:w-3.5 sm:h-3.5 fill-current" />
-            <span>Moods</span>
+            <Heart className="w-3 h-3 fill-current opacity-70" />
+            <span>Remedies</span>
           </button>
-        </div>
+        </nav>
 
-        {/* Header Action Buttons */}
-        <div className="flex items-center space-x-2">
-          {/* Toggle Search */}
+        {/* Zone 3: Primary Actions (Search, Palette, and Settings - ALWAYS visible on mobile!) */}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Quick Search Toggle */}
           <button
             id="toggle-search-panel-btn"
             onClick={() => setIsSearchOpen(!isSearchOpen)}
-            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center space-x-1 text-xs font-bold uppercase tracking-wider ${
+            className={`p-1.5 sm:px-3 sm:py-1.5 rounded-xl border text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5 ${
               isSearchOpen 
-                ? "bg-[#c5a059] text-white border-transparent shadow-sm" 
-                : "bg-white hover:bg-[#faf8f4] text-[#aa843d] border-[#ebdcb9]"
+                ? "bg-[var(--color-accent)] text-white border-[var(--color-accent)]" 
+                : "bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)] text-[var(--color-text-main)] border-[var(--color-border)]"
             }`}
             title="Search Quran"
+            aria-label="Search"
           >
-            <Search className="w-4 h-4" />
-            <span className="hidden md:inline">Search & Jump</span>
+            <Search className="w-3.5 h-3.5" />
+            <span className="hidden md:inline">Search</span>
           </button>
 
-          {/* Preferences Settings */}
+          {/* Quick Theme Cycle Button */}
+          <button
+            id="cycle-theme-btn"
+            onClick={cycleTheme}
+            className="p-1.5 sm:p-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] rounded-xl transition-colors cursor-pointer"
+            title={`Current Theme: ${preferences.theme}. Click to switch.`}
+            aria-label="Switch aesthetic theme"
+          >
+            <Palette className="w-3.5 h-3.5" />
+          </button>
+
+          {/* Settings Modal Toggle - ALWAYS visible on mobile */}
           <button
             id="open-preferences-btn"
             onClick={() => setIsPreferencesOpen(true)}
-            className="p-2.5 bg-white hover:bg-[#faf8f4] border border-[#ebdcb9] hover:border-[#aa843d] text-[#aa843d] rounded-xl transition-all cursor-pointer flex items-center space-x-1 text-xs font-bold uppercase tracking-wider shadow-sm"
-            title="Adjust Preferences"
+            className="p-1.5 sm:p-2 bg-[var(--color-surface)] hover:bg-[var(--color-surface-subtle)] border border-[var(--color-border)] text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] rounded-xl transition-colors cursor-pointer flex items-center gap-1"
+            title="Preferences & Translations"
+            aria-label="Settings"
           >
-            <Settings className="w-4 h-4" />
-            <span className="hidden md:inline">Settings</span>
+            <Settings className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline text-xs font-bold">Settings</span>
           </button>
         </div>
       </header>
 
-      {/* 2. ALERT & WARNING NOTIFICATIONS */}
+      {/* 2. RATE LIMIT & NOTIFICATION BANNERS */}
       <div className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-4 space-y-2">
         {rateLimitWarning && (
-          <div className="p-3 bg-amber-950/40 border border-amber-600/40 text-amber-300 rounded-xl text-xs flex items-center space-x-2 animate-fade-in">
-            <AlertTriangle className="w-4 h-4 shrink-0" />
+          <div className="p-3 bg-amber-500/10 border border-amber-500/30 text-amber-900 rounded-xl text-xs flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
             <span>
-              <strong>Rate Limit Warning:</strong> You've requested several verses quickly. Please reflect on this Ayah for a moment before fetching another (max 10 requests/minute).
+              <strong>Rate Limit Notice:</strong> Please pause and reflect on this verse for a moment before retrieving another (maximum 10 requests per minute).
             </span>
           </div>
         )}
 
         {ayahError && (
-          <div className="p-3 bg-red-50 border border-red-200 text-red-800 rounded-2xl text-xs flex items-center justify-between animate-fade-in">
-            <div className="flex items-center space-x-2">
-              <Info className="w-4 h-4 shrink-0 text-red-700" />
+          <div className="p-3 bg-rose-50 border border-rose-200 text-rose-800 rounded-xl text-xs flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Info className="w-4 h-4 text-rose-700 shrink-0" />
               <span>{ayahError}</span>
             </div>
             <button 
               onClick={() => fetchSpecificAyah(currentAyah?.arabic.surah.number || 2, currentAyah?.arabic.numberInSurah || 255)}
-              className="px-3 py-1 bg-white hover:bg-red-50 rounded-xl border border-red-300 font-bold cursor-pointer text-[10px] transition-colors"
+              className="px-2.5 py-1 bg-white hover:bg-rose-50 rounded-lg border border-rose-300 font-medium cursor-pointer text-[11px]"
             >
-              Retry Connection
+              Retry
             </button>
           </div>
         )}
       </div>
 
-      {/* 3. COLLAPSIBLE SEARCH & QUICK JUMP PORTAL */}
+      {/* 3. COLLAPSIBLE SEARCH & JUMP DRAWER */}
       {isSearchOpen && (
         <section 
           id="search-portal-drawer"
-          className="max-w-3xl mx-auto w-full px-4 md:px-8 mt-4 animate-fade-in"
+          className="max-w-4xl mx-auto w-full px-4 md:px-8 mt-4 animate-fade-in text-left"
         >
-          <div className="bg-white border border-[#ebdcb9] rounded-3xl p-6 shadow-xl relative overflow-hidden">
+          <div className="bg-[var(--color-surface)] border border-[var(--color-border)] rounded-2xl md:rounded-3xl p-6 shadow-xl relative overflow-hidden">
             <button
               onClick={() => setIsSearchOpen(false)}
-              className="absolute top-4 right-4 p-1.5 hover:bg-[#faf6ed] text-[#8c7456] hover:text-[#524430] rounded-xl cursor-pointer transition-colors border border-[#ebdcb9]/40"
+              className="absolute top-4 right-4 p-1.5 text-[var(--color-text-muted)] hover:text-[var(--color-text-main)] rounded-lg cursor-pointer transition-colors"
+              aria-label="Close search drawer"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
-              {/* Left Column: Specific Surah & Ayah Quick Selector */}
-              <div className="md:col-span-5 space-y-4 border-b md:border-b-0 md:border-r border-[#ebdcb9]/60 pb-6 md:pb-0 md:pr-6">
-                <div className="flex items-center space-x-2 text-[#aa843d]">
+              {/* Left Column: Direct Surah & Verse Jump */}
+              <div className="md:col-span-5 space-y-4 border-b md:border-b-0 md:border-r border-[var(--color-border)] pb-6 md:pb-0 md:pr-6">
+                <div className="flex items-center gap-2 text-[var(--color-accent)]">
                   <Compass className="w-4 h-4" />
-                  <h3 className="font-sans font-bold text-xs uppercase tracking-wider">Specific Verse Jump</h3>
+                  <h3 className="font-sans font-semibold text-xs uppercase tracking-wider text-[var(--color-text-main)]">
+                    Specific Verse Jump
+                  </h3>
                 </div>
 
                 <form onSubmit={handleQuickJump} className="space-y-3">
-                  {/* Select Surah */}
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-[#8c7456]">Choose Surah</label>
+                    <label className="text-[11px] text-[var(--color-text-muted)] font-medium">Surah (Chapter)</label>
                     <select
                       id="search-surah-dropdown"
                       value={quickSurah}
                       onChange={(e) => {
                         setQuickSurah(Number(e.target.value));
-                        setQuickAyah(1); // Reset Ayah input on Surah change
+                        setQuickAyah(1);
                       }}
-                      className="w-full px-4 py-2.5 bg-[#faf8f4] border border-[#ebdcb9] focus:border-[#aa843d] rounded-xl text-xs text-[#2c251d] outline-none appearance-none cursor-pointer"
+                      className="w-full px-3.5 py-2.5 bg-[var(--color-surface-subtle)] border border-[var(--color-border)] focus:border-[var(--color-accent)] rounded-xl text-xs text-[var(--color-text-main)] outline-none cursor-pointer"
                     >
                       {SURAH_LIST.map((s) => (
                         <option key={s.number} value={s.number}>
@@ -558,14 +572,13 @@ export default function App() {
                     </select>
                   </div>
 
-                  {/* Input Ayah */}
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-bold text-[#8c7456] flex justify-between">
-                      <span>Enter Ayah Number</span>
+                    <div className="flex justify-between text-[11px] text-[var(--color-text-muted)]">
+                      <span>Verse Number</span>
                       {activeSelectorSurahMeta && (
-                        <span className="text-[#aa843d] text-[9.5px]">Range: 1-{activeSelectorSurahMeta.numberOfAyahs}</span>
+                        <span>Range: 1 – {activeSelectorSurahMeta.numberOfAyahs}</span>
                       )}
-                    </label>
+                    </div>
                     <input
                       id="search-ayah-input"
                       type="number"
@@ -573,14 +586,14 @@ export default function App() {
                       max={activeSelectorSurahMeta?.numberOfAyahs || 286}
                       value={quickAyah}
                       onChange={(e) => setQuickAyah(Number(e.target.value))}
-                      className="w-full px-4 py-2.5 bg-[#faf8f4] border border-[#ebdcb9] focus:border-[#aa843d] rounded-xl text-xs text-[#2c251d] outline-none"
+                      className="w-full px-3.5 py-2.5 bg-[var(--color-surface-subtle)] border border-[var(--color-border)] focus:border-[var(--color-accent)] rounded-xl text-xs text-[var(--color-text-main)] outline-none"
                     />
                   </div>
 
                   <button
                     id="submit-verse-jump-btn"
                     type="submit"
-                    className="w-full py-2.5 bg-[#fbf9f2] hover:bg-[#c5a059] text-[#aa843d] hover:text-white border border-[#ebdcb9] hover:border-transparent font-sans font-bold text-xs uppercase tracking-wider rounded-xl transition-all cursor-pointer flex items-center justify-center space-x-1 shadow-sm"
+                    className="w-full py-2.5 bg-[var(--color-surface-subtle)] hover:bg-[var(--color-accent)] text-[var(--color-text-main)] hover:text-white border border-[var(--color-border)] hover:border-transparent font-medium text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5"
                   >
                     <span>Read Verse</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -588,52 +601,60 @@ export default function App() {
                 </form>
               </div>
 
-              {/* Right Column: Keyword Text Search */}
+              {/* Right Column: Keyword Semantic Search */}
               <div className="md:col-span-7 space-y-4 flex flex-col justify-between">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-2 text-[#aa843d]">
+                  <div className="flex items-center gap-2 text-[var(--color-accent)]">
                     <Search className="w-4 h-4" />
-                    <h3 className="font-sans font-bold text-xs uppercase tracking-wider">Semantic Keyword Search</h3>
+                    <h3 className="font-sans font-semibold text-xs uppercase tracking-wider text-[var(--color-text-main)]">
+                      Search by Keyword
+                    </h3>
                   </div>
 
                   <form onSubmit={handleKeywordSearch} className="flex gap-2">
                     <input
                       id="search-keyword-input"
                       type="text"
-                      placeholder="e.g. Patience, Mercy, Heaven, Heart..."
+                      placeholder="e.g. Patience, Mercy, Light, Peace..."
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="flex-grow px-4 py-2.5 bg-[#faf8f4] border border-[#ebdcb9] focus:border-[#aa843d] rounded-xl text-xs text-[#2c251d] outline-none"
+                      className="flex-grow px-3.5 py-2.5 bg-[var(--color-surface-subtle)] border border-[var(--color-border)] focus:border-[var(--color-accent)] rounded-xl text-xs text-[var(--color-text-main)] outline-none"
                     />
                     <button
                       id="submit-keyword-search-btn"
                       type="submit"
                       disabled={isSearchLoading}
-                      className="px-5 py-2.5 bg-[#c5a059] hover:bg-[#aa843d] text-white font-sans font-bold text-xs uppercase tracking-wider rounded-xl cursor-pointer transition-colors disabled:opacity-50 shadow-sm"
+                      className="px-4 py-2.5 bg-[#c5a059] text-white hover:bg-[#aa843d] font-semibold text-xs rounded-xl cursor-pointer transition-colors disabled:opacity-50"
                     >
-                      {isSearchLoading ? "Searching..." : "Find"}
+                      {isSearchLoading ? "Searching..." : "Search"}
                     </button>
                   </form>
 
-                  {/* Search Error & Results list */}
                   {searchError && (
-                    <p className="text-[11px] text-amber-600 font-medium mt-1">{searchError}</p>
+                    <p className="text-xs text-rose-600 font-medium">{searchError}</p>
                   )}
 
                   {searchResults.length > 0 && (
                     <div className="space-y-2 mt-2">
-                      <p className="text-[10px] uppercase font-bold text-[#8c7456]">Matches Found (First 15):</p>
-                      <div className="max-h-36 overflow-y-auto space-y-1.5 pr-1">
+                      <p className="text-[11px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+                        Matches in Translation:
+                      </p>
+                      <div className="max-h-40 overflow-y-auto space-y-1.5 pr-1">
                         {searchResults.map((match, i) => (
                           <button
                             key={i}
                             onClick={() => {
                               fetchSpecificAyah(match.surah.number, match.numberInSurah);
-                              setIsSearchOpen(false); // Close panel
+                              setIsSearchOpen(false);
                             }}
-                            className="w-full text-left p-3 bg-[#faf8f4] hover:bg-white border border-[#ebdcb9]/40 hover:border-[#aa843d] rounded-xl text-xs text-[#3c3226] transition-all cursor-pointer truncate shadow-sm"
+                            className="w-full text-left p-3 bg-[var(--color-surface-subtle)] hover:bg-[var(--color-surface)] border border-[var(--color-border)] hover:border-[var(--color-accent)] rounded-xl text-xs text-[var(--color-text-main)] transition-colors cursor-pointer truncate"
                           >
-                            <strong className="text-[#aa843d]">{match.surah.englishName} [{match.surah.number}:{match.numberInSurah}]</strong> — {match.text}
+                            <span className="font-semibold text-[var(--color-accent)] font-sans">
+                              {match.surah.englishName} [{match.surah.number}:{match.numberInSurah}]
+                            </span>
+                            <span className="text-[var(--color-text-muted)] font-serif italic ml-2">
+                              — "{match.text}"
+                            </span>
                           </button>
                         ))}
                       </div>
@@ -641,24 +662,24 @@ export default function App() {
                   )}
                 </div>
 
-                <div className="text-[10px] text-[#8c7456] leading-normal pt-2 border-t border-[#ebdcb9]/60">
-                  Tip: Searching matches keywords in the entire selected English translation (e.g. Sahih International). Clicking a result loads the full Arabic text and triggers Gemini.
-                </div>
+                <p className="text-[11px] text-[var(--color-text-muted)] pt-2 border-t border-[var(--color-border)] font-serif italic">
+                  Tip: Searches match occurrences across the selected translation. Clicking any verse instantly loads the Arabic text and Gemini reflection.
+                </p>
               </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* 4. MAIN REFLECTION WORKSPACE (GRID) */}
+      {/* 4. MAIN WORKSPACE */}
       <main className="max-w-7xl mx-auto w-full px-4 md:px-8 mt-8 flex-grow flex flex-col items-center space-y-8">
         
         {activeTab === "explore" ? (
           <>
-            {/* Workspace Layout: Flexes side-by-side on desktop, stacked on mobile */}
+            {/* Side-by-Side Asymmetric Layout */}
             <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               
-              {/* LEFT PANEL: Ayah Display Card (Col Span 7) */}
+              {/* LEFT: Ayah Card (Col Span 7) */}
               <section className="lg:col-span-7 flex justify-center">
                 {currentAyah ? (
                   <AyahCard
@@ -674,18 +695,26 @@ export default function App() {
                     onFetchSpecific={fetchSpecificAyah}
                     isLoading={isAyahLoading}
                     autoPlayAudio={preferences.audioEnabled}
+                    arabicFontSize={preferences.arabicFontSize || "large"}
+                    onCycleFontSize={cycleArabicFontSize}
+                    showEnglishTranslation={preferences.showEnglishTranslation !== false}
+                    showSecondaryTranslation={preferences.showSecondaryTranslation !== false}
+                    onToggleEnglishTranslation={() => handleUpdatePreferences({ 
+                      showEnglishTranslation: preferences.showEnglishTranslation === false ? true : false 
+                    })}
+                    onToggleSecondaryTranslation={() => handleUpdatePreferences({ 
+                      showSecondaryTranslation: preferences.showSecondaryTranslation === false ? true : false 
+                    })}
                   />
                 ) : (
-                  <div className="w-full max-w-2xl aspect-[4/3] bg-white border border-[#ebdcb9] rounded-3xl flex flex-col items-center justify-center space-y-4 shadow-lg">
-                    <div className="w-12 h-12 bg-[#faf8f4] rounded-full flex items-center justify-center animate-bounce border border-[#ebdcb9]/60">
-                      <BookMarked className="w-6 h-6 text-[#aa843d]" />
-                    </div>
-                    <p className="text-[#8c7456] font-sans font-semibold text-sm tracking-wide">Initialising Random Ayah Picker...</p>
+                  <div className="w-full max-w-2xl aspect-[4/3] bg-white border border-[#ebdcb9] rounded-3xl flex flex-col items-center justify-center space-y-3 mushaf-glow">
+                    <div className="w-8 h-8 rounded-full border-2 border-t-transparent border-[#aa843d] animate-spin"></div>
+                    <p className="text-xs text-[#8c7456] font-serif italic">Opening sacred verses...</p>
                   </div>
                 )}
               </section>
 
-              {/* RIGHT PANEL: Live Tafsir & Insights (Col Span 5) */}
+              {/* RIGHT: Live Tafsir & Reflections (Col Span 5) */}
               <section className="lg:col-span-5 flex justify-center h-full">
                 <ReflectionsPanel
                   reflection={currentReflection}
@@ -697,7 +726,7 @@ export default function App() {
 
             </div>
 
-            {/* 5. HISTORY & BOOKMARKS CONTAINER */}
+            {/* Bookmarks & Reading History Container */}
             <section className="w-full flex justify-center pt-4">
               <HistoryAndBookmarks
                 bookmarks={bookmarks}
@@ -721,12 +750,13 @@ export default function App() {
               b => b.surahNumber === currentAyah.arabic.surah.number && 
                    b.ayahNumber === currentAyah.arabic.numberInSurah
             )}
+            reflectionError={reflectionError}
           />
         )}
 
       </main>
 
-      {/* 6. SYSTEM OVERLAYS & PREFERENCE MODALS */}
+      {/* 5. PREFERENCES MODAL */}
       <PreferencePanel
         preferences={preferences}
         onUpdatePreferences={handleUpdatePreferences}
@@ -734,14 +764,18 @@ export default function App() {
         onClose={() => setIsPreferencesOpen(false)}
       />
 
-      {/* 7. REVERENT FOOTER */}
-      <footer className="mt-16 text-center space-y-2 border-t border-[#ebdcb9]/60 pt-8 max-w-4xl mx-auto px-4 text-[#8c7456]">
-        <p className="text-xs font-light">
-          "Indeed, this Quran guides to that which is most suitable and gives good tidings to the believers who do righteous deeds that they will have a great reward." — Al-Isra [17:9]
+      {/* 6. REVERENT EDITORIAL FOOTER */}
+      <footer className="mt-20 border-t border-[var(--color-border)] py-10 max-w-5xl mx-auto w-full px-6 text-center space-y-3 text-[var(--color-text-muted)]">
+        <p className="font-serif italic text-xs md:text-sm text-[var(--color-text-main)] max-w-2xl mx-auto leading-relaxed">
+          "Indeed, this Quran guides to that which is most suitable and gives good tidings to the believers who do righteous deeds that they will have a great reward."
         </p>
-        <p className="text-[10px] font-mono tracking-wider uppercase text-[#aa843d]">
-          Random Ayah Picker
-        </p>
+        <div className="flex items-center justify-center gap-2 text-xs">
+          <span>Surah Al-Isra [17:9]</span>
+          <span aria-hidden="true" className="opacity-40">·</span>
+          <span className="font-display tracking-widest text-[10px] text-[var(--color-accent)] font-semibold uppercase">
+            Ayah Picker & Contemplation
+          </span>
+        </div>
       </footer>
     </div>
   );

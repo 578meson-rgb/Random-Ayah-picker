@@ -1,7 +1,19 @@
 import React, { useState, useRef, useEffect } from "react";
 import { AyahApiResponse } from "../types";
 import { PRIMARY_TRANSLATIONS, SECONDARY_LANGUAGES } from "../translationOptions";
-import { Share2, Bookmark, BookmarkCheck, Play, Square, Loader2, Copy, Check, ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { 
+  Share2, 
+  Bookmark, 
+  BookmarkCheck, 
+  Play, 
+  Square, 
+  Loader2, 
+  Check, 
+  ChevronLeft, 
+  ChevronRight,
+  Eye,
+  EyeOff
+} from "lucide-react";
 import { SURAH_LIST } from "../surahData";
 
 interface AyahCardProps {
@@ -14,6 +26,12 @@ interface AyahCardProps {
   onFetchSpecific: (surahNum: number, ayahNum: number) => void;
   isLoading: boolean;
   autoPlayAudio: boolean;
+  arabicFontSize?: "small" | "medium" | "large" | "xlarge";
+  onCycleFontSize?: () => void;
+  showEnglishTranslation?: boolean;
+  showSecondaryTranslation?: boolean;
+  onToggleEnglishTranslation?: () => void;
+  onToggleSecondaryTranslation?: () => void;
 }
 
 export const AyahCard: React.FC<AyahCardProps> = ({
@@ -26,6 +44,12 @@ export const AyahCard: React.FC<AyahCardProps> = ({
   onFetchSpecific,
   isLoading,
   autoPlayAudio,
+  arabicFontSize = "large",
+  onCycleFontSize,
+  showEnglishTranslation = true,
+  showSecondaryTranslation = true,
+  onToggleEnglishTranslation,
+  onToggleSecondaryTranslation,
 }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isAudioLoading, setIsAudioLoading] = useState(false);
@@ -37,6 +61,7 @@ export const AyahCard: React.FC<AyahCardProps> = ({
   // Resolve translator names
   const primaryTranslator = PRIMARY_TRANSLATIONS.find(t => t.id === primaryTranslationId)?.author || "Translator";
   const secondaryTranslator = SECONDARY_LANGUAGES.find(l => l.id === secondaryLanguageId)?.name || "Translation";
+  const secondaryLangName = SECONDARY_LANGUAGES.find(l => l.id === secondaryLanguageId)?.language || "Translation";
 
   // Audio configuration using absolute ayah number (1 to 6236)
   const ayahAbsoluteNumber = arabic.number;
@@ -44,7 +69,6 @@ export const AyahCard: React.FC<AyahCardProps> = ({
 
   // Autoplay and audio element handling
   useEffect(() => {
-    // Stop any existing audio
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current = null;
@@ -102,16 +126,14 @@ export const AyahCard: React.FC<AyahCardProps> = ({
   const handleCopyText = () => {
     const shareText = `📖 RANDOM AYAH PICKER
 ───────────────────────────────
-${arabic.surah.englishName} - Verse ${arabic.numberInSurah}
+${arabic.surah.englishName} (${arabic.surah.name}) - Verse ${arabic.numberInSurah}
 
 ﴾ ${arabic.text} ﴿
 
-English Translation (${primaryTranslator}):
-"${primary.text}"
-
-${secondary ? `Additional Translation (${secondaryTranslator}):\n"${secondary.text}"\n` : ''}
-Surah: ${arabic.surah.englishName} (Chapter ${arabic.surah.number})
-Total Ayahs in this Surah: ${arabic.surah.numberOfAyahs}
+${showEnglishTranslation ? `English Translation (${primaryTranslator}):\n"${primary.text}"\n\n` : ''}${
+  showSecondaryTranslation && secondary ? `Translation (${secondaryTranslator}):\n"${secondary.text}"\n\n` : ''
+}Surah: ${arabic.surah.englishName} (Chapter ${arabic.surah.number})
+Verse Position: ${arabic.numberInSurah} of ${arabic.surah.numberOfAyahs}
 Shared from Random Ayah Picker.`;
 
     navigator.clipboard.writeText(shareText).then(() => {
@@ -136,7 +158,6 @@ Shared from Random Ayah Picker.`;
     }
   };
 
-  // Helper functions to navigate ayahs inside the app
   const loadPreviousVerse = () => {
     const currentSurahNum = arabic.surah.number;
     const currentAyahNum = arabic.numberInSurah;
@@ -144,11 +165,8 @@ Shared from Random Ayah Picker.`;
     if (currentAyahNum > 1) {
       onFetchSpecific(currentSurahNum, currentAyahNum - 1);
     } else {
-      // Go to previous surah
       let targetSurahNum = currentSurahNum - 1;
-      if (targetSurahNum < 1) {
-        targetSurahNum = 114; // Wrap around to An-Nas
-      }
+      if (targetSurahNum < 1) targetSurahNum = 114;
       const targetSurahMeta = SURAH_LIST.find(s => s.number === targetSurahNum);
       if (targetSurahMeta) {
         onFetchSpecific(targetSurahNum, targetSurahMeta.numberOfAyahs);
@@ -163,34 +181,67 @@ Shared from Random Ayah Picker.`;
     if (currentAyahNum < arabic.surah.numberOfAyahs) {
       onFetchSpecific(currentSurahNum, currentAyahNum + 1);
     } else {
-      // Go to next surah
       let targetSurahNum = currentSurahNum + 1;
-      if (targetSurahNum > 114) {
-        targetSurahNum = 1; // Wrap around to Al-Fatihah
-      }
+      if (targetSurahNum > 114) targetSurahNum = 1;
       onFetchSpecific(targetSurahNum, 1);
     }
   };
+
+  // Font size classes including small
+  const fontSizes = {
+    small: "text-xl md:text-2xl leading-[2.3]",
+    medium: "text-2xl md:text-3xl leading-[2.5]",
+    large: "text-3xl md:text-4xl lg:text-[2.65rem] leading-[2.7]",
+    xlarge: "text-4xl md:text-5xl leading-[2.9]"
+  };
+
+  const fontSizeLabels: Record<string, string> = {
+    small: "Small",
+    medium: "Medium",
+    large: "Large",
+    xlarge: "Extra Large"
+  };
+
+  const hasAnyTranslationActive = showEnglishTranslation || (showSecondaryTranslation && secondary && secondaryLanguageId !== "none");
 
   return (
     <div 
       id="ayah-card-container"
       className="w-full max-w-2xl bg-white border border-[#ebdcb9] rounded-3xl shadow-lg overflow-hidden gold-glow relative transition-all duration-300 hover:border-[#c5a059] flex flex-col"
     >
-      {/* Visual background element */}
+      {/* Visual background accents */}
       <div className="absolute top-0 right-0 w-32 h-32 bg-[#c5a059]/5 rounded-bl-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-[#c5a059]/5 rounded-tr-full pointer-events-none" />
 
-      {/* 📖 Header */}
-      <div className="flex items-center justify-center py-4 bg-[#fbf9f2] border-b border-[#ebdcb9]/60 text-[#aa843d] relative">
-        <span className="text-xl mr-2">🕌</span>
-        <h2 className="font-sans font-bold tracking-widest text-xs uppercase">
-          Random Ayah Picker
-        </h2>
+      {/* 📖 Header with Juz and font size control */}
+      <div className="flex items-center justify-between px-6 py-4 bg-[#fbf9f2] border-b border-[#ebdcb9]/60 text-[#aa843d] relative">
+        <div className="flex items-center gap-2">
+          <span className="text-xl">🕌</span>
+          <h2 className="font-sans font-bold tracking-widest text-xs uppercase">
+            Random Ayah Picker
+          </h2>
+          {arabic.juz && (
+            <span className="text-[11px] font-sans font-medium text-[#8c7456] hidden sm:inline">
+              • Juz {arabic.juz}
+            </span>
+          )}
+        </div>
+
+        {/* Font size badge button */}
+        {onCycleFontSize && (
+          <button
+            onClick={onCycleFontSize}
+            className="text-[11px] font-bold text-[#8c7456] hover:text-[#524430] bg-[#faf8f4] border border-[#ebdcb9] px-2.5 py-1 rounded-xl transition-all cursor-pointer shadow-2xs"
+            title="Click to cycle Arabic text size"
+          >
+            Font: <span className="text-[#aa843d]">{fontSizeLabels[arabicFontSize]}</span>
+          </button>
+        )}
       </div>
 
       {/* Main content body */}
       <div className="p-6 md:p-8 flex-grow flex flex-col justify-between space-y-6">
+        
         {/* SURAH NAME - Verse [Number] */}
         <div className="text-center">
           <span className="text-[10px] uppercase tracking-widest text-[#8c7456] font-semibold block mb-1">
@@ -199,55 +250,120 @@ Shared from Random Ayah Picker.`;
           <h3 className="font-display font-medium text-2xl text-[#2c251d] tracking-normal">
             {arabic.surah.englishName} <span className="text-[#c5a059] font-sans">/</span> Verse {arabic.numberInSurah}
           </h3>
+          <p className="text-xs text-[#8c7456] font-medium font-serif mt-0.5">
+            {arabic.surah.englishNameTranslation}
+          </p>
         </div>
 
         {/* ﴾ Arabic Text Here ﴿ */}
-        <div className="my-2 py-4 flex flex-col items-center justify-center bg-[#faf8f4] rounded-2xl p-4 border border-[#ebdcb9]/40">
+        <div className="my-2 py-5 flex flex-col items-center justify-center bg-[#faf8f4] rounded-2xl p-4 md:p-6 border border-[#ebdcb9]/40 relative">
           <p 
             id="arabic-verse-text"
             dir="rtl" 
-            className="font-arabic text-2xl md:text-3xl leading-loose font-medium text-[#7d5d21] text-center tracking-wide px-4 selection:bg-[#ebdcb9]/40"
+            className={`font-arabic ${fontSizes[arabicFontSize]} text-[#7d5d21] text-center tracking-wide px-2 selection:bg-[#ebdcb9]/40 font-medium`}
           >
             {arabic.text}
+            <span className="inline-flex items-center justify-center text-[#c5a059] mx-1 text-2xl" aria-label="End of verse">
+              {' '}۝
+            </span>
           </p>
         </div>
 
-        <div className="border-t border-[#ebdcb9]/40 my-1.5" />
+        {/* Translation Visibility Controls Bar */}
+        <div className="flex items-center justify-between text-xs py-1 px-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8c7456]">
+            Translations:
+          </span>
+          <div className="flex items-center gap-2">
+            {onToggleEnglishTranslation && (
+              <button
+                onClick={onToggleEnglishTranslation}
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                  showEnglishTranslation 
+                    ? "bg-[#faf6ed] text-[#aa843d] border-[#aa843d]" 
+                    : "bg-[#faf8f4] text-[#8c7456] border-[#ebdcb9] opacity-75"
+                }`}
+                title="Toggle English Translation"
+              >
+                {showEnglishTranslation ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                <span>English: {showEnglishTranslation ? "On" : "Off"}</span>
+              </button>
+            )}
+
+            {secondary && secondaryLanguageId !== "none" && onToggleSecondaryTranslation && (
+              <button
+                onClick={onToggleSecondaryTranslation}
+                className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1 ${
+                  showSecondaryTranslation 
+                    ? "bg-[#faf6ed] text-[#aa843d] border-[#aa843d]" 
+                    : "bg-[#faf8f4] text-[#8c7456] border-[#ebdcb9] opacity-75"
+                }`}
+                title={`Toggle ${secondaryLangName} Translation`}
+              >
+                {showSecondaryTranslation ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                <span>{secondaryLangName}: {showSecondaryTranslation ? "On" : "Off"}</span>
+              </button>
+            )}
+          </div>
+        </div>
 
         {/* English Translation Section */}
-        <div className="space-y-1">
-          <h4 className="text-[10px] uppercase font-bold tracking-wider text-[#8c7456]">
-            English Translation:
-          </h4>
-          <p className="font-display text-sm md:text-base text-[#3c3226] leading-relaxed italic font-normal selection:bg-[#ebdcb9]/40">
-            "{primary.text}"
-          </p>
-          <p className="text-[10px] text-[#8c7456] text-right font-medium italic">
-            — {primaryTranslator}
-          </p>
-        </div>
+        {showEnglishTranslation && (
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <h4 className="text-[10px] uppercase font-bold tracking-wider text-[#8c7456]">
+                English Translation:
+              </h4>
+              <span className="text-[10px] text-[#8c7456] font-medium italic">
+                — {primaryTranslator}
+              </span>
+            </div>
+            <p className="font-display text-sm md:text-base text-[#3c3226] leading-relaxed italic font-normal selection:bg-[#ebdcb9]/40">
+              "{primary.text}"
+            </p>
+          </div>
+        )}
 
         {/* Additional Translation Section (Only if enabled) */}
-        {secondary && secondaryLanguageId !== "none" && (
+        {showSecondaryTranslation && secondary && secondaryLanguageId !== "none" && (
           <>
-            <div className="border-t border-[#ebdcb9]/40 my-1.5" />
+            {showEnglishTranslation && <div className="border-t border-[#ebdcb9]/40 my-1" />}
             <div className="space-y-1">
-              <h4 className="text-[10px] uppercase font-bold tracking-wider text-[#8c7456]">
-                Translation ({SECONDARY_LANGUAGES.find(l => l.id === secondaryLanguageId)?.language}):
-              </h4>
-              <p className={`text-xs md:text-sm text-[#3c3226] leading-relaxed selection:bg-[#ebdcb9]/40 ${secondaryLanguageId.startsWith("bn") ? "font-bangla font-medium text-sm md:text-base text-[#26211a]" : "italic"}`}>
+              <div className="flex items-center justify-between">
+                <h4 className="text-[10px] uppercase font-bold tracking-wider text-[#8c7456]">
+                  Translation ({secondaryLangName}):
+                </h4>
+                <span className="text-[10px] text-[#8c7456] font-medium italic">
+                  — {secondaryTranslator}
+                </span>
+              </div>
+              <p className={`text-xs md:text-sm text-[#3c3226] leading-relaxed selection:bg-[#ebdcb9]/40 ${
+                secondaryLanguageId.startsWith("bn") ? "font-bangla font-medium text-sm md:text-base text-[#26211a]" : "italic"
+              }`}>
                 "{secondary.text}"
-              </p>
-              <p className="text-[10px] text-[#8c7456] text-right font-medium italic">
-                — {secondaryTranslator}
               </p>
             </div>
           </>
         )}
 
+        {/* When both translations are hidden (Arabic Only Quran Mode) */}
+        {!hasAnyTranslationActive && (
+          <div className="text-center py-4 px-3 bg-[#faf8f4] border border-dashed border-[#ebdcb9] rounded-xl text-xs text-[#8c7456]">
+            <span>✨ Pure Arabic recitation view (Translations hidden). </span>
+            {onToggleEnglishTranslation && (
+              <button 
+                onClick={onToggleEnglishTranslation} 
+                className="text-[#aa843d] font-bold hover:underline ml-1 cursor-pointer"
+              >
+                Show English
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="border-t border-[#ebdcb9]/40 my-2" />
 
-        {/* Continue Reading Action Button & Chapter Info */}
+        {/* EXACT PREVIOUS LAYOUT: Chapter Details on left, < Prev Verse and Next Verse > on right */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="text-xs text-[#8c7456] space-y-1">
             <div>
@@ -255,10 +371,11 @@ Shared from Random Ayah Picker.`;
             </div>
             <div>
               <span className="font-semibold text-[#5c4a37]">Verse Position:</span> {arabic.numberInSurah} of {arabic.surah.numberOfAyahs}
+              {arabic.juz && <span className="ml-2 font-normal text-[#8c7456]">• Juz {arabic.juz}</span>}
             </div>
           </div>
 
-          {/* Inline Navigation Buttons */}
+          {/* Inline Navigation Buttons matching the user's screenshot */}
           <div className="flex items-center gap-2">
             <button
               id="prev-ayah-btn"
@@ -284,7 +401,7 @@ Shared from Random Ayah Picker.`;
         </div>
       </div>
 
-      {/* Button Controls Footer */}
+      {/* EXACT PREVIOUS LAYOUT: Bottom Action Buttons Row matching screenshot */}
       <div className="bg-[#fcfbfa] p-4 md:p-6 border-t border-[#ebdcb9] flex flex-wrap gap-3 items-center justify-between">
         {/* Play Recitation, Bookmark, Copy/Share Buttons */}
         <div className="flex items-center gap-2">
@@ -359,7 +476,7 @@ Shared from Random Ayah Picker.`;
           </button>
         </div>
 
-        {/* Get Another Ayah (Next Random) */}
+        {/* Pick Random Ayah (Next Random) matching screenshot */}
         <button
           id="fetch-random-ayah-btn"
           onClick={onFetchRandom}
@@ -382,4 +499,3 @@ Shared from Random Ayah Picker.`;
     </div>
   );
 };
-

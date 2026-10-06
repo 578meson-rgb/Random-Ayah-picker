@@ -6,6 +6,8 @@ export interface MoodPreset {
 export interface MoodInfo {
   id: string;
   name: string;
+  arabicTerm: string;
+  transliteration: string;
   emoji: string;
   color: string;
   description: string;
@@ -15,10 +17,12 @@ export interface MoodInfo {
 export const MOODS_LIST: MoodInfo[] = [
   {
     id: "grateful",
-    name: "Grateful & Happy",
-    emoji: "😊",
-    color: "bg-emerald-50/70 border-emerald-200/80 text-emerald-900 hover:bg-emerald-100/50 hover:border-emerald-300",
-    description: "Channel your joy and express gratitude for your blessings.",
+    name: "Grateful & Joyful",
+    arabicTerm: "الشُّكْر",
+    transliteration: "Ash-Shukr",
+    emoji: "🌿",
+    color: "bg-emerald-50/60 border-emerald-200/80 text-emerald-950 hover:bg-emerald-100/50 hover:border-emerald-400",
+    description: "Channel your joy, count your blessings, and cultivate divine appreciation.",
     presets: [
       { surah: 14, ayah: 7 },   // Ibrahim:7 "If you are grateful, I will surely increase you..."
       { surah: 55, ayah: 60 },  // Ar-Rahman:60 "Is the reward for good anything but good?"
@@ -33,9 +37,11 @@ export const MOODS_LIST: MoodInfo[] = [
   {
     id: "sad",
     name: "Sad & Grieving",
-    emoji: "😢",
-    color: "bg-blue-50/70 border-blue-200/80 text-blue-900 hover:bg-blue-100/50 hover:border-blue-300",
-    description: "Seeking comfort, reassurance, and emotional healing during heavy times.",
+    arabicTerm: "الصَّبْر",
+    transliteration: "As-Sabr",
+    emoji: "🌧️",
+    color: "bg-slate-50/70 border-slate-200/80 text-slate-900 hover:bg-slate-100/60 hover:border-slate-300",
+    description: "Seeking divine comfort, gentle reassurance, and emotional healing during sorrow.",
     presets: [
       { surah: 9, ayah: 40 },   // At-Tawbah:40 "Do not grieve; indeed Allah is with us."
       { surah: 3, ayah: 139 },  // Ali 'Imran:139 "So do not weaken and do not grieve, for you will be superior..."
@@ -49,10 +55,12 @@ export const MOODS_LIST: MoodInfo[] = [
   },
   {
     id: "anxious",
-    name: "Anxious & Stressed",
-    emoji: "😰",
-    color: "bg-amber-50/70 border-amber-200/80 text-amber-900 hover:bg-amber-100/50 hover:border-amber-300",
-    description: "Calming a busy mind, finding peace, and placing trust in God's plan.",
+    name: "Anxious & Restless",
+    arabicTerm: "السَّكِينَة",
+    transliteration: "As-Sakinah",
+    emoji: "🕊️",
+    color: "bg-amber-50/60 border-amber-200/80 text-amber-950 hover:bg-amber-100/50 hover:border-amber-300",
+    description: "Quieting a racing mind, restoring inner peace, and placing trust in the All-Knowing.",
     presets: [
       { surah: 13, ayah: 28 },  // Ar-Ra'd:28 "Unquestionably, by the remembrance of Allah hearts find rest."
       { surah: 2, ayah: 286 },  // Al-Baqarah:286 "Allah does not burden a soul beyond that it can bear..."
@@ -66,10 +74,12 @@ export const MOODS_LIST: MoodInfo[] = [
   },
   {
     id: "demotivated",
-    name: "Demotivated & Weak",
-    emoji: "😔",
-    color: "bg-purple-50/70 border-purple-200/80 text-purple-900 hover:bg-purple-100/50 hover:border-purple-300",
-    description: "Re-igniting hope, reminding yourself of your purpose, and finding energy.",
+    name: "Weary & Demotivated",
+    arabicTerm: "الرَّجَاء",
+    transliteration: "Ar-Raja'",
+    emoji: "🕯️",
+    color: "bg-indigo-50/60 border-indigo-200/80 text-indigo-950 hover:bg-indigo-100/50 hover:border-indigo-300",
+    description: "Kindling hope, reviving purpose, and renewing strength when spiritual energy feels depleted.",
     presets: [
       { surah: 39, ayah: 53 },  // Az-Zumar:53 "Say, 'O My servants who have transgressed... do not despair of the mercy of Allah...'"
       { surah: 12, ayah: 87 },  // Yusuf:87 "...and despair not of relief from Allah. Indeed, no one despairs..."
@@ -83,10 +93,12 @@ export const MOODS_LIST: MoodInfo[] = [
   },
   {
     id: "angry",
-    name: "Angry & Impatient",
-    emoji: "😠",
-    color: "bg-red-50/70 border-red-200/80 text-red-900 hover:bg-red-100/50 hover:border-red-300",
-    description: "Restraining anger, developing patience, and restoring inner calmness.",
+    name: "Frustrated & Impatient",
+    arabicTerm: "الحِلْم",
+    transliteration: "Al-Hilm",
+    emoji: "🔥",
+    color: "bg-rose-50/60 border-rose-200/80 text-rose-950 hover:bg-rose-100/50 hover:border-rose-300",
+    description: "Tempering anger, embracing patience, and overcoming frustration through self-mastery.",
     presets: [
       { surah: 3, ayah: 134 },  // Ali 'Imran:134 "Who spend [in the cause of Allah]... and who restrain anger..."
       { surah: 42, ayah: 37 },  // Ash-Shura:37 "And when they are angry, they forgive."
@@ -100,10 +112,12 @@ export const MOODS_LIST: MoodInfo[] = [
   },
   {
     id: "lost",
-    name: "Lost & Seeking Direction",
+    name: "Lost & Seeking Path",
+    arabicTerm: "الهُدَى",
+    transliteration: "Al-Huda",
     emoji: "🧭",
-    color: "bg-teal-50/70 border-teal-200/80 text-teal-900 hover:bg-teal-100/50 hover:border-teal-300",
-    description: "Seeking direction, clarity, and firm guidance when feelings are uncertain.",
+    color: "bg-teal-50/60 border-teal-200/80 text-teal-950 hover:bg-teal-100/50 hover:border-teal-300",
+    description: "Praying for guidance, discernment, and clarity when life's crossroads feel uncertain.",
     presets: [
       { surah: 93, ayah: 7 },   // Ad-Duha:7 "And He found you lost and guided [you]."
       { surah: 1, ayah: 6 },    // Al-Fatihah:6 "Guide us to the straight path."

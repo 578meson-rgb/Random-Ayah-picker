@@ -1,54 +1,129 @@
 @import "tailwindcss";
 
-@import url('https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Scheherazade+New:wght@400;700&family=Noto+Sans+Bengali:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:ital,wght@0,400;0,700;1,400&family=Cinzel:wght@500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Noto+Naskh+Arabic:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 @theme {
-  --font-sans: "Inter", system-ui, sans-serif;
-  --font-display: "Playfair Display", serif;
-  --font-arabic: "Noto Naskh Arabic", "Amiri", "Scheherazade New", serif;
-  --font-bangla: "Noto Sans Bengali", sans-serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-display: "Cinzel", "Cormorant Garamond", Georgia, serif;
+  --font-arabic: "Amiri Quran", "Amiri", "Noto Naskh Arabic", serif;
+  --font-bangla: "Noto Serif Bengali", sans-serif;
 }
 
-/* Base style resets and customizations for Milkish theme */
+/* Global Root Styling */
+:root {
+  --color-canvas: #fbf9f5;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f6f3eb;
+  --color-border: #e8e3d8;
+  --color-border-hover: #c99e52;
+  --color-primary: #0e3e31;
+  --color-primary-hover: #165b48;
+  --color-accent: #b38637;
+  --color-accent-subtle: #faf5eb;
+  --color-text-main: #1d2623;
+  --color-text-muted: #64736b;
+  --color-text-arabic: #0b3429;
+}
+
+/* Theme: Midnight Celestial */
+[data-theme="midnight"] {
+  --color-canvas: #09101d;
+  --color-surface: #0f1c30;
+  --color-surface-subtle: #14233c;
+  --color-border: #1f3352;
+  --color-border-hover: #e5b967;
+  --color-primary: #d4a74a;
+  --color-primary-hover: #e9bf64;
+  --color-accent: #d4a74a;
+  --color-accent-subtle: #13243f;
+  --color-text-main: #f1f5f9;
+  --color-text-muted: #94a3b8;
+  --color-text-arabic: #e6be6a;
+}
+
+/* Theme: Sandalwood & Amber */
+[data-theme="sandalwood"] {
+  --color-canvas: #faf6f0;
+  --color-surface: #ffffff;
+  --color-surface-subtle: #f5ede1;
+  --color-border: #ebdcc8;
+  --color-border-hover: #a35d2d;
+  --color-primary: #853e1a;
+  --color-primary-hover: #9c4c23;
+  --color-accent: #b66827;
+  --color-accent-subtle: #fdf6ec;
+  --color-text-main: #2b1f17;
+  --color-text-muted: #796655;
+  --color-text-arabic: #5e260c;
+}
+
 body {
-  background-color: #fcfaf2; /* Soft creamy milky off-white */
-  color: #2c251d; /* Deep warm charcoal-brown for amazing readability */
+  background-color: var(--color-canvas);
+  color: var(--color-text-main);
   font-family: var(--font-sans);
+  min-height: 100vh;
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
-/* Custom scrollbars for a neat look */
+/* Authentic Quranic line spacing for diacritics */
+.quranic-text {
+  font-family: var(--font-arabic);
+  line-height: 2.6;
+  letter-spacing: 0.015em;
+  word-spacing: 0.1em;
+  direction: rtl;
+  text-align: center;
+}
+
+/* Manuscript cartouche border */
+.manuscript-frame {
+  position: relative;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.manuscript-inner-border {
+  border: 1px solid var(--color-border);
+}
+
+/* Gold illuminated subtle glow */
+.mushaf-glow {
+  box-shadow: 0 4px 24px -2px rgba(184, 138, 55, 0.08), 0 2px 8px -2px rgba(0, 0, 0, 0.03);
+}
+
+.mushaf-glow-hover:hover {
+  box-shadow: 0 8px 32px -4px rgba(184, 138, 55, 0.16), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+}
+
+/* Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f5eedc; /* Soft caramel-milk track */
+  background: var(--color-canvas);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c5a059; /* Soft matte gold thumb */
-  border-radius: 4px;
+  background: var(--color-border);
+  border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #aa843d;
+  background: var(--color-accent);
 }
 
-/* Beautiful custom glow utility class for the gold border */
-.gold-glow {
-  box-shadow: 0 4px 20px rgba(197, 160, 89, 0.12);
+/* Quranic verse end ornament */
+.verse-end-symbol {
+  font-family: var(--font-arabic);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-accent);
+  margin: 0 0.35rem;
 }
-
-.gold-glow-hover:hover {
-  box-shadow: 0 6px 24px rgba(197, 160, 89, 0.25);
-}
-
-/* Quranic verse separator symbols */
-.ayah-number-badge {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none" stroke="%23c5a059" stroke-width="4"><path d="M50 5 L95 50 L50 95 L5 50 Z"/><circle cx="50" cy="50" r="15" fill="%23c5a059"/></svg>');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
-}
-
