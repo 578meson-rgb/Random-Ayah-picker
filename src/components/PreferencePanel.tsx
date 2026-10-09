@@ -19,7 +19,7 @@ export const PreferencePanel: React.FC<PreferencePanelProps> = ({
   if (!isOpen) return null;
 
   const currentTheme = preferences.theme || "emerald";
-  const currentFontSize = preferences.arabicFontSize || "large";
+  const currentFontSize = preferences.arabicFontSize || "small";
   const showEnglish = preferences.showEnglishTranslation !== false;
   const showSecondary = preferences.showSecondaryTranslation !== false;
 

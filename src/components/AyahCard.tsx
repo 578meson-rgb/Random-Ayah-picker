@@ -44,7 +44,7 @@ export const AyahCard: React.FC<AyahCardProps> = ({
   onFetchSpecific,
   isLoading,
   autoPlayAudio,
-  arabicFontSize = "large",
+  arabicFontSize = "small",
   onCycleFontSize,
   showEnglishTranslation = true,
   showSecondaryTranslation = true,

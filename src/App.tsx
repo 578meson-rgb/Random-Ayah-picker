@@ -29,7 +29,7 @@ export default function App() {
     audioEnabled: false,
     reciter: "ar.alafasy",
     theme: "emerald",
-    arabicFontSize: "large",
+    arabicFontSize: "small",
     showEnglishTranslation: true,
     showSecondaryTranslation: true,
   });
@@ -72,7 +72,11 @@ export default function App() {
     if (savedPrefs) {
       try {
         const parsed = JSON.parse(savedPrefs);
-        setPreferences(parsed);
+        setPreferences(prev => ({
+          ...prev,
+          ...parsed,
+          arabicFontSize: parsed.arabicFontSize || "small",
+        }));
         if (parsed.theme) initialTheme = parsed.theme;
       } catch (e) {
         console.error("Failed to parse preferences from localStorage", e);
@@ -695,7 +699,7 @@ export default function App() {
                     onFetchSpecific={fetchSpecificAyah}
                     isLoading={isAyahLoading}
                     autoPlayAudio={preferences.audioEnabled}
-                    arabicFontSize={preferences.arabicFontSize || "large"}
+                    arabicFontSize={preferences.arabicFontSize || "small"}
                     onCycleFontSize={cycleArabicFontSize}
                     showEnglishTranslation={preferences.showEnglishTranslation !== false}
                     showSecondaryTranslation={preferences.showSecondaryTranslation !== false}

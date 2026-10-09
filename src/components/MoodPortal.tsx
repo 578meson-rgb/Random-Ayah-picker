@@ -166,7 +166,15 @@ export const MoodPortal: React.FC<MoodPortalProps> = ({
                     {/* Arabic Text */}
                     <div 
                       dir="rtl" 
-                      className="font-arabic text-3xl md:text-4xl text-[var(--color-text-arabic)] text-center leading-[2.6] px-2 selection:bg-[var(--color-accent)]/20"
+                      className={`font-arabic ${
+                        preferences.arabicFontSize === "xlarge"
+                          ? "text-4xl md:text-5xl leading-[2.8]"
+                          : preferences.arabicFontSize === "large"
+                          ? "text-3xl md:text-4xl leading-[2.6]"
+                          : preferences.arabicFontSize === "medium"
+                          ? "text-2xl md:text-3xl leading-[2.5]"
+                          : "text-xl md:text-2xl leading-[2.3]"
+                      } text-[var(--color-text-arabic)] text-center px-2 selection:bg-[var(--color-accent)]/20`}
                     >
                       {currentAyah.arabic.text} ۝
                     </div>
